@@ -68,7 +68,7 @@ export class DinosaurServicesStack extends cdk.Stack {
     const runHandler = new Function(this, "runHandler", {
       runtime: Runtime.NODEJS_12_X,
       code: Code.asset(`lambdas`),
-      handler: "post/run.handler",
+      handler: "get/run.handler",
       environment: {
         tableName: table.tableName
       },
@@ -77,6 +77,6 @@ export class DinosaurServicesStack extends cdk.Stack {
     const runIntegration = new apigateway.LambdaIntegration(runHandler);
     const run = api.addResource("run");
 
-    run.addMethod("POST", runIntegration);
+    run.addMethod("GET", runIntegration);
   }
 }

@@ -4,8 +4,6 @@ const dynamodb = new AWS.DynamoDB();
 const tableName = process.env.tableName;
 
 exports.handler = async (event, context, callback) => {
-  // TODO implement
-  console.log(JSON.stringify(event));
   // if (event.httpMethod != "POST") return responseNotPut;
 
   const scanParams = {
@@ -20,41 +18,13 @@ exports.handler = async (event, context, callback) => {
     let rotatePercent = parseFloat(scanResult.Items[0].rotatePercent.S);
     let sequence = scanResult.Items[0].sequence.S;
     let sequenceArray = sequence.split(" ");
-
     let rotations = [];
 
-    sequenceArray.forEach(sequence => {
-      console.log("New Round: " + sequence);
-      // [5 ,6 ]  7
-      if (rotations.length == 0) {
-        rotations.push({
-          egg: parseInt(sequence),
-          was_rotated: rotatePercent
-        });
+    for (let i = 0; i < eggCounts; i++) {
+      rotations.push({ egg: i + 1, was_rotated: 0 });
+    }
 
-        return;
-      }
-
-      let existing = false;
-
-      rotations.map(egg => {
-        if (egg.egg == parseInt(sequence)) {
-          egg.was_rotated += rotatePercent;
-          if (egg.was_rotated > 1) {
-            egg.was_rotated = parseFloat((egg.was_rotated - 1.0).toFixed(2));
-          }
-          existing = true;
-          return egg;
-        }
-      });
-
-      if (!existing) {
-        rotations.push({
-          egg: parseInt(sequence),
-          was_rotated: rotatePercent
-        });
-      }
-    });
+    rotations = rotateEgg(rotations, sequenceArray, rotatePercent);
 
     const response = {
       statusCode: 200,
@@ -77,11 +47,22 @@ exports.handler = async (event, context, callback) => {
 
 const responseFailed = {
   statusCode: 400,
-  headers: {
-    "Access-Control-Allow-Origin": "*", // Required for CORS support to work
-    "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
-  },
   body: {
     Error: "Failed in reaching Database"
   }
+};
+
+const rotateEgg = (rotations, sequenceArray, rotatePercent) => {
+  let rotationsArray = rotations;
+
+  sequenceArray.forEach(sequence => {
+    if (sequence > rotationsArray.length) return;
+
+    const indexFound = rotationsArray.findIndex(x => {
+      return x.egg == sequence;
+    });
+
+    rotationsArray[indexFound].was_rotated += rotatePercent;
+  });
+  return rotationsArray;
 };
